@@ -10,17 +10,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.bumptech.glide.Glide;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -28,7 +22,6 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity {
 
   private RecyclerView recyclerView;
-  private Executor executor = Executors.newSingleThreadExecutor();
   private PhotoAdapter adapter;
   private Handler handler;
 
@@ -40,77 +33,9 @@ public class MainActivity extends AppCompatActivity {
     recyclerView = findViewById(R.id.rv);
     recyclerView.setLayoutManager(
         new GridLayoutManager(this, 2, LinearLayoutManager.VERTICAL, false));
-    adapter = new PhotoAdapter();
+    adapter = new PhotoAdapter(this);
     recyclerView.setAdapter(adapter);
     new FlicrkGetRecentPhotos().start();
-  }
-
-  private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder> {
-    private List<Photo> data = new ArrayList<>();
-
-    @NonNull @Override
-    public PhotoHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-      Context context = viewGroup.getContext();
-      View view = LayoutInflater.from(context).inflate(R.layout.photo_item, viewGroup, false);
-      return new PhotoHolder(view);
-    }
-
-    @Override public void onBindViewHolder(@NonNull PhotoHolder photoHolder, int i) {
-      photoHolder.setData(data.get(i));
-    }
-
-    @Override public int getItemCount() {
-      return data.size();
-    }
-
-    public void setData(Photos photos) {
-      data.clear();
-      if (photos != null) {
-        data.addAll(photos.getPhoto());
-      } else {
-        Toast.makeText(MainActivity.this, "a", Toast.LENGTH_SHORT).show();
-      }
-      notifyDataSetChanged();
-    }
-  }
-
-  private static class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-    private final TextView tv;
-    private final ImageView imageView;
-    private final Context context;
-    private String photoUrl;
-
-    public PhotoHolder(@NonNull View itemView) {
-      super(itemView);
-      itemView.setOnClickListener(this);
-      tv = itemView.findViewById(R.id.tv_holder);
-      imageView = itemView.findViewById(R.id.iv);
-      context = itemView.getContext();
-
-    }
-
-    public void setData(Photo photo) {
-      photoUrl = String.format(
-          "https://farm%s.staticflickr.com/%s/%s_%s.jpg",
-          photo.getFarm(),
-          photo.getServer(),
-          photo.getId(),
-          photo.getSecret()
-      );
-      Glide.with(context)
-          .load(photoUrl)
-          .placeholder(R.drawable.load)
-          .error(R.drawable.error)
-          .into(imageView);
-    }
-
-    @Override public void onClick(View v) {
-      Intent intent =new Intent(context,ActivityPhoto.class);
-      intent.putExtra("photo",photoUrl);
-      Bundle options = new Bundle();
-      options.putString("photo",photoUrl);
-      context.startActivity(intent, options);
-    }
   }
 
   class FlicrkGetRecentPhotos extends Thread {
