@@ -23,7 +23,6 @@ class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListene
     tv = itemView.findViewById(R.id.tv_holder);
     imageView = itemView.findViewById(R.id.iv);
     context = itemView.getContext();
-
   }
 
   public void setData(Photo photo) {
@@ -49,10 +48,10 @@ class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListene
   }
 
   @Override public void onClick(View v) {
-    Intent intent =new Intent(context,ActivityPhoto.class);
-    intent.putExtra("photo",photoUrl);
+    Intent intent = new Intent(context, ActivityPhoto.class);
+    intent.putExtra("photo", photoUrl);
     Bundle options = new Bundle();
-    options.putString("photo",photoUrl);
+    options.putString("photo", photoUrl);
     context.startActivity(intent, options);
   }
 }

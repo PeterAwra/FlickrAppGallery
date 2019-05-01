@@ -33,10 +33,10 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder> {
     return data.size();
   }
 
-  public void setData(Photos photos) {
+  public void setData(List<Photo> photos) {
     data.clear();
     if (photos != null) {
-      data.addAll(photos.getPhoto());
+      data.addAll(photos);
     } else {
       Toast.makeText(mainActivity, "a", Toast.LENGTH_SHORT).show();
     }
