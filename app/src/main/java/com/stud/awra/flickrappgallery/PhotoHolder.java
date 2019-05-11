@@ -21,12 +21,10 @@ class PhotoHolder extends RecyclerView.ViewHolder {
   }
 
   public void setData(Photo photo) {
-    String photoUrl_icon = PhotoActivity.getUrlImage(photo,imageView);
+    String photoUrl_icon = PhotoActivity.getUrlImage(photo, imageView);
     Glide.with(imageView.getContext()).load(photoUrl_icon).into(imageView);
     imageView.setOnClickListener(
         v -> context.startActivity(
             new Intent(context, PhotoActivity.class).putExtra(URL_IMAGE, photo)));
   }
-
-
 }

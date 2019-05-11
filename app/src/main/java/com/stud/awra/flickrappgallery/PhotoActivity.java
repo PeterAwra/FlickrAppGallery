@@ -1,12 +1,12 @@
 package com.stud.awra.flickrappgallery;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import com.bumptech.glide.Glide;
 
 public class PhotoActivity extends AppCompatActivity implements View.OnClickListener {
@@ -15,6 +15,8 @@ public class PhotoActivity extends AppCompatActivity implements View.OnClickList
   private FrameLayout appBar;
   private ImageView contentView;
   private String urlImage;
+  private Photo photo;
+  private TextView title;
 
   public static String getUrlImage(Photo photo, View view) {
     return String.format(
@@ -34,6 +36,7 @@ public class PhotoActivity extends AppCompatActivity implements View.OnClickList
     appBar = findViewById(R.id.myapp_bar);
     findViewById(R.id.back_bt).setOnClickListener(this);
     findViewById(R.id.share_bt).setOnClickListener(this);
+    title = findViewById(R.id.tv_title);
     hide();
     load();
     contentView.setOnClickListener(v -> toggle());
@@ -41,11 +44,13 @@ public class PhotoActivity extends AppCompatActivity implements View.OnClickList
 
   private void load() {
     new Thread(() -> {
-      while (contentView.getWidth() == 0);
+      while (contentView.getWidth() == 0) ;
       runOnUiThread(() -> {
+        photo = (Photo) getIntent().getSerializableExtra(URL_IMAGE);
         urlImage =
-            getUrlImage(((Photo) getIntent().getSerializableExtra(URL_IMAGE)), contentView);
+            getUrlImage(photo, contentView);
         Glide.with(contentView.getContext()).load(urlImage).into(contentView);
+        title.setText(photo.getTitle());
       });
     }).start();
   }
@@ -78,6 +83,7 @@ public class PhotoActivity extends AppCompatActivity implements View.OnClickList
         Intent share = new Intent(android.content.Intent.ACTION_SEND);
         share.setType("text/plain");
         share.putExtra(Intent.EXTRA_TEXT, urlImage);
+        share.putExtra(Intent.EXTRA_SUBJECT, photo.getTitle());
         startActivity(Intent.createChooser(share, "Share"));
         break;
       }
