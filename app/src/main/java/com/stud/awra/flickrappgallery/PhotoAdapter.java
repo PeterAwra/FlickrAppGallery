@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder> {
-  List<Photo> photos;
+  private List<Photo> photos;
 
   public PhotoAdapter() {
     photos = new ArrayList<>();
@@ -32,6 +32,11 @@ class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder> {
 
   public void setData(List<Photo> photos) {
     this.photos.clear();
+    this.photos.addAll(photos);
+    notifyDataSetChanged();
+  }
+
+  public void addData(List<Photo> photos) {
     this.photos.addAll(photos);
     notifyDataSetChanged();
   }

@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -71,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
-  private void showSnakBarError(Exception e,  final PhotoAdapter adapter) {
+  private void showSnakBarError(Exception e, final PhotoAdapter adapter) {
     Snackbar.make(recyclerView, e.getLocalizedMessage(), Snackbar.LENGTH_INDEFINITE)
         .setAction("Retry", new View.OnClickListener() {
           @Override public void onClick(View v) {
