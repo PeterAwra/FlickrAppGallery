@@ -7,15 +7,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
-import com.google.gson.Gson;
-import java.io.IOException;
-import java.util.List;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import android.support.v7.widget.SearchView;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,60 +22,94 @@ public class MainActivity extends AppCompatActivity {
   public static final String FORMAT = "json";
   public static final String METHOD = "flickr.photos.getRecent";
   private RecyclerView recyclerView;
+  private SearchView searchView;
+  private PublishSubject<String> voidSingle;
+  private PhotoAdapter adapter;
+  private Disposable subscribeSearch;
+  private Disposable subscribeRecent;
+  private CompositeDisposable compositeDisposable;
 
   @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     recyclerView = findViewById(R.id.rv);
+    searchView = findViewById(R.id.search_view);
     recyclerView.setLayoutManager(
         new GridLayoutManager(this, 2, LinearLayoutManager.VERTICAL, false)
     );
-    PhotoAdapter adapter = new PhotoAdapter();
+    adapter = new PhotoAdapter();
     recyclerView.setAdapter(adapter);
-    getPhotosOkHttp(adapter);
+    observableSearchView(searchView);
+    voidSingle = PublishSubject.create();
+    voidSingle.onNext("0");
+    getRecent();
+    compositeDisposable = new CompositeDisposable();
   }
 
-  private void getPhotosOkHttp(final PhotoAdapter adapter) {
-    final OkHttpClient client = new OkHttpClient();
-    final Request request = new Request.Builder().url(
-        "https://api.flickr.com/services/rest/" +
-            "?method=" + METHOD +
-            "&api_key=" + API_KEY +
-            "&format=" + FORMAT +
-            "&nojsoncallback=1")
-        .get()
-        .build();
-    client.newCall(request).enqueue(new Callback() {
-      @Override public void onFailure(Call call, IOException e) {
-        showSnakBarError(e, adapter);
+  private void getRecent() {
+    new Thread(new Runnable() {
+      @Override public void run() {
+        subscribeRecent = App.getApiFlickrService()
+            .getRecent(ApiFlickrService.METHOD, ApiFlickrService.API_KEY, ApiFlickrService.FORMAT,
+                1)
+            .observeOn(Schedulers.io())
+            .map(resultPhotos -> resultPhotos.getPhotos().getPhoto())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(photos -> adapter.setData(photos), throwable -> showSnakBarError(throwable));
       }
-
-      @Override public void onResponse(Call call, Response response) throws IOException {
-        Gson gson = new Gson();
-        ResultRecent resultRecent = null;
-        if (response.body() != null) {
-          resultRecent = gson.fromJson(response.body().string(), ResultRecent.class);
-        }
-        if (resultRecent != null) {
-          Photos photos = resultRecent.getPhotos();
-          final List<Photo> photo = photos.getPhoto();
-          runOnUiThread(new Runnable() {
-            @Override public void run() {
-              adapter.setData(photo);
-            }
-          });
-        }
-      }
-    });
+    }).start();
+    //compositeDisposable.add(subscribeRecent);
   }
 
-  private void showSnakBarError(Exception e, final PhotoAdapter adapter) {
-    Snackbar.make(recyclerView, e.getLocalizedMessage(), Snackbar.LENGTH_INDEFINITE)
-        .setAction("Retry", new View.OnClickListener() {
-          @Override public void onClick(View v) {
-            getPhotosOkHttp(adapter);
+  private void observableSearchView(SearchView searchView) {
+    Observable<String> stringObservable = Observable.create(emitter -> {
+      searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        @Override public boolean onQueryTextSubmit(String query) {
+          emitter.onNext(query);
+          searchView.clearFocus();
+          if (query.length() == 0) {
           }
-        })
+          return false;
+        }
+
+        @Override public boolean onQueryTextChange(String newText) {
+          emitter.onNext(newText);
+          return false;
+        }
+      });
+    });
+    subscribeSearch = stringObservable.observeOn(Schedulers.io())
+        .debounce(300, TimeUnit.MILLISECONDS)
+        .map(String::trim)
+        .filter(s -> s.length() >= 3)
+        .map(String::toLowerCase)
+        .distinctUntilChanged()
+        .switchMap(this::flickrGetQueryPhotos)
+        .map(resultPhotos -> resultPhotos.getPhotos().getPhoto())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(adapter::setData, throwable -> showSnakBarError(throwable, adapter));
+    // compositeDisposable.add(subscribeSearch);
+  }
+
+  private void showSnakBarError(Throwable e, final PhotoAdapter adapter) {
+    Snackbar.make(recyclerView, e.getLocalizedMessage(), Snackbar.LENGTH_INDEFINITE)
+        .setAction("Retry", v -> observableSearchView(searchView))
         .show();
+  }
+
+  private void showSnakBarError(Throwable e) {
+    Snackbar.make(recyclerView, e.getLocalizedMessage(), Snackbar.LENGTH_INDEFINITE)
+        .setAction("Retry", v -> getRecent())
+        .show();
+  }
+
+  public Observable<ResultPhotos> flickrGetQueryPhotos(String query) {
+    return App.getApiFlickrService()
+        .getQueryData("flickr.photos.search", API_KEY, FORMAT, 1, query);
+  }
+
+  @Override protected void onDestroy() {
+    super.onDestroy();
+    compositeDisposable.dispose();
   }
 }

@@ -3,7 +3,7 @@ package com.stud.awra.flickrappgallery;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class ResultRecent {
+public class ResultPhotos {
 
   @SerializedName("photos")
   @Expose

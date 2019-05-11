@@ -3,6 +3,7 @@ package com.stud.awra.flickrappgallery;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -37,6 +38,8 @@ public class PhotoActivity extends AppCompatActivity implements View.OnClickList
     findViewById(R.id.back_bt).setOnClickListener(this);
     findViewById(R.id.share_bt).setOnClickListener(this);
     title = findViewById(R.id.tv_title);
+    SearchView searchView=findViewById(R.id.search_view);
+
     hide();
     load();
     contentView.setOnClickListener(v -> toggle());
